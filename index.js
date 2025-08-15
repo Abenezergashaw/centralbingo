@@ -955,8 +955,8 @@ async function create_game(g) {
 
   try {
     await pool.query(
-      "INSERT INTO games (game, players, no_players, winner, cartela_number) VALUES (?, ?, ?, ?, ?)",
-      [g, sanitizedForDb, totalCartelaCount, "", 0]
+      "INSERT INTO games (game, players, no_players, winner, cartela_number,npc_win) VALUES (?, ?, ?, ?, ?,?)",
+      [g, sanitizedForDb, totalCartelaCount, "", 0, 0]
     );
     console.log("✅ Game inserted successfully");
   } catch (err) {
