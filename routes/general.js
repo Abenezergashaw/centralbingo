@@ -6,6 +6,10 @@ const bot = require("../telegram");
 const axios = require("axios");
 const { signES256 } = require("../utils/cryptography");
 const admin_phone = ["934596919", "938880223"];
+const cheerio = require("cheerio");
+
+const admin_name = "KALEAB FIKRU MEKONEN";
+const admin_telebirr_phone = "2519****2626";
 
 const PRIVATE_KEY = `
 -----BEGIN EC PRIVATE KEY-----
@@ -172,6 +176,97 @@ router.post("/create_deposit_transaction", async (req, res) => {
     });
 
     res.json({ status: true, message: "Transaction saved" });
+  } catch (err) {
+    console.error("DB error:", err);
+    res.status(500).json({ status: false, message: "Server error" });
+  }
+});
+
+router.post("/auto_create_deposit_transaction", async (req, res) => {
+  const { txn_id, phone, amount, method, type, status } = req.body;
+
+  if (!txn_id || !phone || !amount || !method || !type || !status) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Missing required fields" });
+  }
+  console.log(phone);
+
+  try {
+    // ✅ Check if txn_id already exists
+    const [existing] = await pool.query(
+      "SELECT id FROM transaction WHERE txn_id = ?",
+      [txn_id]
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        status: false,
+        message: "Transaction number already proccessed",
+      });
+    }
+
+    const receiptData = await validateTelebrirReceipt(
+      txn_id,
+      admin_name,
+      admin_telebirr_phone,
+      "2519****6919"
+    );
+
+    console.log(
+      receiptData.valid,
+      receiptData.receiptData.amount -
+        receiptData.receiptData.serviceFee -
+        receiptData.receiptData.serviceFeeVAT
+    );
+
+    if (!receiptData.valid) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid transaction number",
+      });
+    }
+
+    const requestedAmount =
+      receiptData.receiptData.amount -
+      receiptData.receiptData.serviceFee -
+      receiptData.receiptData.serviceFeeVAT;
+
+    // ✅ Insert new transaction
+    await pool.query(
+      `INSERT INTO transaction (txn_id, phone, amount, method, type, name, account, status)
+           VALUES (?, ?, ?, ?, ?, ?,? ,?)`,
+      [txn_id, phone, requestedAmount, method, type, "NA", "NA", "active"]
+    );
+
+    const summary = `Money has been deposited. Details: 
+    🏦 Bank: ${method}
+    👤 Phone Number: ${phone}
+    💵 Amount: ETB ${requestedAmount}
+    📄 Ref: ${txn_id}`;
+
+    bot.sendMessage("353008986", summary, {
+      // reply_markup: {
+      //   inline_keyboard: [
+      //     [
+      //       {
+      //         text: "Confirm",
+      //         callback_data: `confirm_d_${phone}_${amount}_${txn_id}`,
+      //       },
+      //     ],
+      //   ],
+      // },
+    });
+    await pool.query("UPDATE users SET bonus = bonus + ? WHERE phone = ?", [
+      requestedAmount,
+      phone,
+    ]);
+
+    res.json({
+      status: true,
+      message: "Transaction saved",
+      amount: requestedAmount,
+    });
   } catch (err) {
     console.error("DB error:", err);
     res.status(500).json({ status: false, message: "Server error" });
@@ -1059,6 +1154,35 @@ router.get("/users", async (req, res) => {
   }
 });
 
+router.get("/get_name", async (req, res) => {
+  const phone = req.query.phone?.trim();
+
+  if (!phone) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Phone number is required." });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT name
+       FROM users where phone = ?`,
+      [phone]
+    );
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ status: false, message: "No users found." });
+    }
+
+    res.json({ status: true, data: rows });
+  } catch (err) {
+    console.error("DB error:", err);
+    res.status(500).json({ status: false, message: "Server error." });
+  }
+});
+
 router.post("/transfer", async (req, res) => {
   const { phone1, phone2, amount } = req.body;
 
@@ -1128,6 +1252,44 @@ router.post("/transfer", async (req, res) => {
   }
 });
 
+router.post("/leaderboard", async (req, res) => {
+  const { phone, game } = req.body;
+
+  const data = await getTopPlayersIncludingUser(phone, game);
+
+  if (!data || data.length === 0) {
+    return res
+      .status(404)
+      .json({ status: false, message: "No players found." });
+  }
+  res.json({ status: true, data });
+});
+
+router.post("/profile", async (req, res) => {
+  try {
+    const { phone, name } = req.body;
+
+    if (!phone || !name) {
+      return res.status(400).json({ error: "Phone and name are required" });
+    }
+
+    console.log(phone, "named", name);
+
+    await pool.query("update users set name = ? where phone = ?", [
+      name,
+      phone,
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 async function get_telegram_id_from_phone(phone) {
   if (!phone) return false;
 
@@ -1142,5 +1304,254 @@ async function get_telegram_id_from_phone(phone) {
     return false;
   }
 }
+
+async function validateTelebrirReceipt(
+  reference,
+  receiverName,
+  receiverPhone,
+  senderPhone
+) {
+  try {
+    // Construct URL
+    const receiptUrl = `https://transactioninfo.ethiotelecom.et/receipt/${reference}`;
+
+    // Scrape data
+    const receiptData = await scrapeTelebrirReceipt(receiptUrl);
+
+    // Validate data
+    const validation = {
+      receiverNameMatch: receiptData.receiverName === receiverName,
+      receiverPhoneMatch: receiptData.receiverPhone.endsWith(
+        receiverPhone.slice(-4)
+      ),
+      senderPhoneMatch: receiptData.senderPhone.endsWith(senderPhone.slice(-4)),
+      allMatch: function () {
+        return (
+          this.receiverNameMatch &&
+          this.receiverPhoneMatch &&
+          this.senderPhoneMatch
+        );
+      },
+    };
+
+    return {
+      valid: validation.allMatch(),
+      validationDetails: validation,
+      receiptData: receiptData,
+    };
+  } catch (error) {
+    console.error("Error validating receipt:", error);
+    throw error;
+  }
+}
+
+async function scrapeTelebrirReceipt(receiptUrl) {
+  try {
+    // Fetch the HTML content
+    const response = await axios.get(receiptUrl);
+    const html = response.data;
+
+    // Load HTML into Cheerio
+    const $ = cheerio.load(html);
+
+    // Helper function to extract numeric value from currency string
+    const extractNumericValue = (currencyString) => {
+      const numericValue = parseFloat(currencyString.replace(/[^\d.]/g, ""));
+      return isNaN(numericValue) ? null : numericValue;
+    };
+
+    // Extract the essential data
+    const receiptData = {
+      // Sender information
+      senderName: $('td:contains("የከፋይ ስም/Payer Name")').next().text().trim(),
+      senderPhone: $('td:contains("የከፋይ ቴሌብር ቁ./Payer telebirr no.")')
+        .next()
+        .text()
+        .trim(),
+
+      // Receiver information
+      receiverName: $('td:contains("የገንዘብ ተቀባይ ስም/Credited Party name")')
+        .next()
+        .text()
+        .trim(),
+      receiverPhone: $(
+        'td:contains("የገንዘብ ተቀባይ ቴሌብር ቁ./Credited party account no")'
+      )
+        .next()
+        .text()
+        .trim(),
+      serviceFee: extractNumericValue(
+        $('td:contains("የአገልግሎት ክፍያ/Service fee")').next().text().trim()
+      ),
+      serviceFeeVAT: extractNumericValue(
+        $('td:contains("የአገልግሎት ክፍያ ተ.እ.ታ/Service fee VAT")')
+          .next()
+          .text()
+          .trim()
+      ),
+      // Transaction details
+      amount: extractNumericValue(
+        $('td:contains("ጠቅላላ የተከፈለ/Total Paid Amount")').next().text().trim()
+      ),
+      status: $('td:contains("የክፍያው ሁኔታ/transaction status")')
+        .next()
+        .text()
+        .trim(),
+    };
+
+    return receiptData;
+  } catch (error) {
+    console.error("Error scraping receipt:", error);
+    throw error;
+  }
+}
+
+// async function getTop10Players(gameName) {
+//   // Query all players strings for the given game
+//   const [rows] = await pool.query("SELECT players FROM games WHERE game = ?", [
+//     gameName,
+//   ]);
+
+//   // Aggregate player counts
+//   const counts = {};
+
+//   for (const row of rows) {
+//     if (!row.players) continue; // skip empty/null
+
+//     const playersArray = row.players.split(",").map((p) => p.trim());
+
+//     for (const player of playersArray) {
+//       if (!player) continue;
+//       counts[player] = (counts[player] || 0) + 1;
+//     }
+//   }
+
+//   // Convert counts to array and sort descending
+//   const sortedPlayers = Object.entries(counts)
+//     .sort((a, b) => b[1] - a[1])
+//     .slice(0, 10)
+//     .map(([player, count]) => ({ player, count }));
+
+//   return sortedPlayers;
+// }
+
+async function getTop10Players(gameName) {
+  const [rows] = await pool.query("SELECT players FROM games WHERE game = ?", [
+    gameName,
+  ]);
+
+  const counts = {};
+
+  for (const row of rows) {
+    if (!row.players) continue;
+
+    const playersArray = row.players
+      .split(",")
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
+    if (playersArray.length < 5) {
+      // Skip this game because it has fewer than 5 players
+      continue;
+    }
+
+    for (const player of playersArray) {
+      counts[player] = (counts[player] || 0) + 1;
+    }
+  }
+
+  const sortedPlayers = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([player, count]) => ({ player, count }));
+
+  return sortedPlayers;
+}
+
+async function countUserGamesWithMinPlayers(phone, gameName) {
+  const [rows] = await pool.query(
+    "SELECT players FROM games WHERE game = ? AND players LIKE ?",
+    [gameName, `%${phone}%`]
+  );
+
+  let count = 0;
+
+  for (const row of rows) {
+    if (!row.players) continue;
+
+    const playersArray = row.players
+      .split(",")
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
+    // Skip games with fewer than 5 players
+    if (playersArray.length < 5) continue;
+
+    // Check exact presence of phone number
+    if (playersArray.includes(phone)) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+async function getTopPlayersIncludingUser(phone, gameName) {
+  // Fetch all games for this gameName with ≥5 players
+  const [rows] = await pool.query("SELECT players FROM games WHERE game = ?", [
+    gameName,
+  ]);
+
+  const counts = {};
+
+  for (const row of rows) {
+    if (!row.players) continue;
+
+    const playersArray = row.players
+      .split(",")
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
+    if (playersArray.length < 5) continue;
+
+    for (const player of playersArray) {
+      counts[player] = (counts[player] || 0) + 1;
+    }
+  }
+
+  // Sort players by frequency descending
+  const sortedPlayers = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  // Take top 10
+  const top10 = sortedPlayers.slice(0, 10);
+
+  // Check if user is in top 10
+  const userInTop10 = top10.some(([player]) => player === phone);
+
+  if (userInTop10) {
+    // Map to desired output format and return top 10
+    return top10.map(([player, count]) => ({ player, count }));
+  } else {
+    // Get user count (or 0 if not played)
+    const userCount = counts[phone] || 0;
+
+    // Prepare result: top 10 + user at bottom
+    const result = top10.map(([player, count]) => ({ player, count }));
+
+    // Append user at the bottom only if userCount > 0
+    if (userCount > 0) {
+      result.push({ player: phone, count: userCount });
+    } else {
+      // If userCount == 0, you can decide to append or not; here we skip
+    }
+
+    return result;
+  }
+}
+
+(async () => {
+  const players = await getTopPlayersIncludingUser("934596919", 10);
+  console.log(players);
+})();
 
 module.exports = router;

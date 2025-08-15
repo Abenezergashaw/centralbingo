@@ -8,6 +8,7 @@ const names = require("./names");
 const path = require("path");
 const axios = require("axios");
 const bot = require("./telegram");
+const cheerio = require("cheerio");
 
 const app = express();
 const server = http.createServer(app);
@@ -25,6 +26,7 @@ app.use(express.json());
 
 app.use("/api", require("./routes/auth"));
 app.use("/api/general", require("./routes/general"));
+app.use("/audio", express.static(path.join(process.cwd(), "audio")));
 
 let games = {
   10: {
@@ -43,7 +45,7 @@ let games = {
     last_number_called_at: Date.now(),
     grace_timeout: null,
     npc: true,
-    npc_count: 10,
+    npc_count: 2,
     npc_added: 0,
     npc_lines: [],
     consecutive_games: 0,
@@ -67,6 +69,28 @@ let games = {
     npc_count: 5,
     npc_added: 0,
     npc_lines: [],
+    consecutive_games: 0,
+  },
+  30: {
+    value: 30,
+    players: [],
+    active: false,
+    numbers: [],
+    drawn_numbers: [],
+    count: 15,
+    interval: null,
+    call_interval: null,
+    counter: 0,
+    pending: false,
+    current_number: null,
+    winners: [],
+    last_number_called_at: Date.now(),
+    grace_timeout: null,
+    npc: true,
+    npc_count: 5,
+    npc_added: 0,
+    npc_lines: [],
+    consecutive_games: 0,
   },
   50: {
     value: 50,
@@ -88,6 +112,27 @@ let games = {
     npc_added: 0,
     npc_lines: [],
   },
+  80: {
+    value: 80,
+    players: [],
+    active: false,
+    numbers: [],
+    drawn_numbers: [],
+    count: 15,
+    interval: null,
+    call_interval: null,
+    counter: 0,
+    pending: false,
+    current_number: null,
+    winners: [],
+    last_number_called_at: Date.now(),
+    grace_timeout: null,
+    npc: true,
+    npc_count: 5,
+    npc_added: 0,
+    npc_lines: [],
+    consecutive_games: 0,
+  },
   100: {
     value: 100,
     players: [],
@@ -108,8 +153,68 @@ let games = {
     npc_added: 0,
     npc_lines: [],
   },
+  150: {
+    value: 150,
+    players: [],
+    active: false,
+    numbers: [],
+    drawn_numbers: [],
+    count: 15,
+    interval: null,
+    call_interval: null,
+    counter: 0,
+    pending: false,
+    current_number: null,
+    winners: [],
+    last_number_called_at: Date.now(),
+    grace_timeout: null,
+    npc: false,
+    npc_count: 4,
+    npc_added: 0,
+    npc_lines: [],
+  },
+  200: {
+    value: 200,
+    players: [],
+    active: false,
+    numbers: [],
+    drawn_numbers: [],
+    count: 15,
+    interval: null,
+    call_interval: null,
+    counter: 0,
+    pending: false,
+    current_number: null,
+    winners: [],
+    last_number_called_at: Date.now(),
+    grace_timeout: null,
+    npc: false,
+    npc_count: 4,
+    npc_added: 0,
+    npc_lines: [],
+  },
+  300: {
+    value: 300,
+    players: [],
+    active: false,
+    numbers: [],
+    drawn_numbers: [],
+    count: 15,
+    interval: null,
+    call_interval: null,
+    counter: 0,
+    pending: false,
+    current_number: null,
+    winners: [],
+    last_number_called_at: Date.now(),
+    grace_timeout: null,
+    npc: false,
+    npc_count: 4,
+    npc_added: 0,
+    npc_lines: [],
+  },
 };
-
+const userSockets = {};
 io.on("connection", (socket) => {
   console.log("Client connected");
 
@@ -127,15 +232,20 @@ io.on("connection", (socket) => {
   });
 
   // Game rooms join
-  socket.on("join_room", (room_id, u, g) => {
-    console.log("Joined", room_id, u, g);
+  socket.on("join_room", (room_id, username, g) => {
+    console.log("Joined", room_id, username, g);
+
     socket.room_id = room_id;
-    socket.user_id = u;
+    socket.username = username;
+
+    // Store mapping
+    userSockets[username] = socket.id;
+
     socket.join(room_id);
 
     // console.log("Game ", g);
     if (g) {
-      const index = games[g].players.findIndex((p) => p.user_id === u);
+      const index = games[g].players.findIndex((p) => p.user_id === username);
       console.log("Found user: ", index);
       if (index !== -1) {
         socket.emit("cartela_number", JSON.stringify(games[g].players[index]));
@@ -285,12 +395,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("go_back", (g, u) => {
-    games[g].players = games[g].players.filter((p) => p.user_id !== u);
-    const { interval, grace_timeout, ...cleanGame } = games[g];
-    io.to(`game_${g}`).emit(`go_back_${g}`, JSON.stringify(cleanGame));
-    console.log("Game", g, games[g]);
-    // io.emit(`selected_card_respose_${g}`, JSON.stringify(cleanGame));
-    return;
+    if (!games[g].active) {
+      games[g].players = games[g].players.filter((p) => p.user_id !== u);
+      const { interval, grace_timeout, ...cleanGame } = games[g];
+      io.to(`game_${g}`).emit(`go_back_${g}`, JSON.stringify(cleanGame));
+      console.log("Game", g, games[g]);
+      // io.emit(`selected_card_respose_${g}`, JSON.stringify(cleanGame));
+      return;
+    }
   });
 
   // Exit game from game to home
@@ -381,10 +493,19 @@ io.on("connection", (socket) => {
     }, time_left - 250);
   });
 
-  socket.on("disconnect", () => {
+  socket.on("left_game", (g, uu) => {
+    removeUserFromRoom(g, uu);
+  });
+
+  socket.on("left_game_before", (g, uu, gg) => {
+    removeUserFromRoom(g, uu);
+    remove_user_from_players_list(gg, uu);
+  });
+
+  socket.on("disconnect", (reason) => {
     const room = socket.room_id;
-    const u = socket.user_id;
-    console.log("room", room, u);
+    const u = socket.username;
+    console.log("removed", "room", room, u, reason);
     if (room) {
       const g = room.split("_")[1];
       remove_user_from_players_list(g, u);
@@ -408,6 +529,23 @@ function emptyRoom(roomName) {
   }
 }
 
+// remove user form room
+function removeUserFromRoom(roomName, username) {
+  const socketId = userSockets[username];
+  if (!socketId) {
+    console.log(`No socket found for username: ${username}`);
+    return;
+  }
+
+  const socketToRemove = io.sockets.sockets.get(socketId);
+  if (socketToRemove) {
+    socketToRemove.leave(roomName);
+    console.log(`Removed ${username} from room ${roomName}`);
+  } else {
+    console.log(`Socket for ${username} not connected`);
+  }
+}
+
 // Exlude interval from each object
 function remove_interval_from_games() {
   const clean = {};
@@ -421,9 +559,10 @@ function remove_interval_from_games() {
 // Remove player from list if they selected cartela
 function remove_user_from_players_list(g, u) {
   const index = games[g].players.findIndex((p) => p.user_id === u);
-
+  console.log(index, "indexxx");
   if (index !== -1) {
-    if (!games[g].players[index].is_active) {
+    if (0 == 0) {
+      // if (!games[g].players[index].is_active) {
       console.log("Leaving Player", games[g].players[index]);
       games[g].players = games[g].players.filter((p) => p.user_id !== u);
       console.log("After Leaving Player", games[g].players);
@@ -477,7 +616,7 @@ function timer(value) {
 
         // Apply variation with limits
         games[value].npc_count = Math.max(
-          2,
+          1,
           Math.min(baseCount + variation, 100)
         );
 
@@ -510,7 +649,7 @@ function timer(value) {
 
       // Find available numbers (1-100 not in any cartela)
       const availableNumbers = Array.from(
-        { length: 100 },
+        { length: 200 },
         (_, i) => i + 1
       ).filter((n) => !allUsedNumbers.has(n));
 
@@ -574,7 +713,7 @@ function timer(value) {
     }
 
     // Game start logic
-    if (count < 1) {
+    if (count < 2) {
       const active_players = games[value].players.filter((p) => p.is_active);
       if (value === 10) console.log("Active players:", active_players.length);
       const hasNPC = active_players.some((p) => p.user_id === "npc");
@@ -593,8 +732,8 @@ function timer(value) {
 
         // Clean up and broadcast
         const { interval, grace_timeout, ...cleanGame } = games[value];
-        io.emit(`timer_${value}`, JSON.stringify(cleanGame));
         io.emit("game-starting", JSON.stringify(cleanGame));
+        io.emit(`timer_${value}`, JSON.stringify(cleanGame));
         clearInterval(games[value].interval);
         const npcPlayer = games[value].players.find(
           (p) => p.user_id === "npc"
@@ -611,8 +750,8 @@ function timer(value) {
         setTimeout(() => {
           games[value].call_interval = setInterval(() => {
             broadcast_numbers(value, games[value].numbers);
-          }, 3000);
-        }, 2000);
+          }, 4000);
+        }, 1);
       } else {
         count = 45; // Reset timer if no active players
       }
@@ -623,7 +762,7 @@ function timer(value) {
 // Generate numbers to draw
 function generate_numbers(g, c) {
   if (games[g].npc) {
-    const card = cards[0];
+    const card = cards[c - 1];
     return riggedShuffleFlexible(card);
   }
 
@@ -751,31 +890,36 @@ function broadcast_numbers(g, numbers) {
         is_active: true,
       };
 
-      // npcWinCheckAlgorithm(
-      //   g,
-      //   npcPlayer.cartela_number[0],
-      //   games[g].drawn_numbers,
-      //   numbers[games[g].counter]
-      // );
+      npcWinCheckAlgorithm(
+        g,
+        npcPlayer.cartela_number[0],
+        games[g].drawn_numbers,
+        numbers[games[g].counter]
+      );
     }
   } else {
     games[g].counter = 0;
     clearInterval(games[g].call_interval);
+    const { interval, grace_timeout, ...cleanGame } = games[g];
+    io.to(`game_${g}`).emit("finished_calling", JSON.stringify(cleanGame));
     timer(g);
     games[g].active = false;
     games[g].numbers = [];
     games[g].drawn_numbers = [];
     games[g].players = [];
     games[g].current_number = null;
-
-    const { interval, grace_timeout, ...cleanGame } = games[g];
-
-    io.to(`game_${g}`).emit("finished_calling", JSON.stringify(cleanGame));
   }
 }
 
 timer(10);
-// timer(20);
+timer(20);
+timer(30);
+timer(50);
+timer(80);
+timer(100);
+timer(150);
+timer(200);
+timer(300);
 
 // Clear everything on bingo
 function clear_everything(g) {
@@ -1600,6 +1744,69 @@ async function npcWinCheckAlgorithm(g, n, d, c) {
     console.log("Not won: ", games[g].npc_lines, n);
   }
 }
+
+async function scrapeTelebrirReceipt(receiptUrl) {
+  try {
+    // Fetch the HTML content
+    const response = await axios.get(receiptUrl);
+    const html = response.data;
+
+    // Load HTML into Cheerio
+    const $ = cheerio.load(html);
+
+    // Helper function to extract numeric value from currency string
+    const extractNumericValue = (currencyString) => {
+      const numericValue = parseFloat(currencyString.replace(/[^\d.]/g, ""));
+      return isNaN(numericValue) ? null : numericValue;
+    };
+
+    // Extract the essential data
+    const receiptData = {
+      // Sender information
+      senderName: $('td:contains("የከፋይ ስም/Payer Name")').next().text().trim(),
+      senderPhone: $('td:contains("የከፋይ ቴሌብር ቁ./Payer telebirr no.")')
+        .next()
+        .text()
+        .trim(),
+
+      // Receiver information
+      receiverName: $('td:contains("የገንዘብ ተቀባይ ስም/Credited Party name")')
+        .next()
+        .text()
+        .trim(),
+      receiverPhone: $(
+        'td:contains("የገንዘብ ተቀባይ ቴሌብር ቁ./Credited party account no")'
+      )
+        .next()
+        .text()
+        .trim(),
+      serviceFee: extractNumericValue(
+        $('td:contains("የአገልግሎት ክፍያ/Service fee")').next().text().trim()
+      ),
+      serviceFeeVAT: extractNumericValue(
+        $('td:contains("የአገልግሎት ክፍያ ተ.እ.ታ/Service fee VAT")')
+          .next()
+          .text()
+          .trim()
+      ),
+      // Transaction details
+      amount: extractNumericValue(
+        $('td:contains("ጠቅላላ የተከፈለ/Total Paid Amount")').next().text().trim()
+      ),
+      status: $('td:contains("የክፍያው ሁኔታ/transaction status")')
+        .next()
+        .text()
+        .trim(),
+    };
+
+    return receiptData;
+  } catch (error) {
+    console.error("Error scraping receipt:", error);
+    throw error;
+  }
+}
+
+const receiptUrl = "https://transactioninfo.ethiotelecom.et/receipt/CHB655VDA2";
 
 server.listen(5000, "0.0.0.0", () => {
   console.log("Server running at http://localhost:5000");
