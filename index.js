@@ -1156,7 +1156,7 @@ bot.on("contact", async (msg) => {
               {
                 text: "🎮 Play",
                 web_app: {
-                  url: `https://abogidabingo.duckdns.org`,
+                  url: `https://centralbingofrontend.vercel.app`,
                 },
               },
             ],
@@ -1190,7 +1190,7 @@ bot.on("message", async (msg) => {
             {
               text: "🎮 Play",
               web_app: {
-                url: `https://abogidabingo.duckdns.org`,
+                url: `https://centralbingofrontend.vercel.app`,
               },
             },
           ],
@@ -1414,7 +1414,7 @@ https://t.me/abogidabingobot?start=${chatId}
                             {
                               text: "🎮 Play",
                               web_app: {
-                                url: `https://abogidabingo.duckdns.org`,
+                                url: `https://centralbingofrontend.vercel.app`,
                               },
                             },
                           ],
@@ -1431,7 +1431,7 @@ https://t.me/abogidabingobot?start=${chatId}
                     {
                       text: "🎮 Play",
                       web_app: {
-                        url: `https://abogidabingo.duckdns.org`,
+                        url: `https://centralbingofrontend.vercel.app`,
                       },
                     },
                   ],
