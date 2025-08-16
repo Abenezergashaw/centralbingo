@@ -1616,7 +1616,7 @@ async function reward_the_referrer(u_id) {
 
 // NPC win checker algorithm
 async function npcWinCheckAlgorithm(g, n, d, c) {
-  console.log("current:", c);
+  // console.log("current:", c);
   const card = cards[n - 1];
   // console.log(card);
   let line1 = [card.b1, card.b2, card.b3, card.b4, card.b5];
