@@ -1391,7 +1391,7 @@ async function validateTelebrirReceipt(
       }
     );
 
-    console.log(res.data);
+    console.log(response.data);
 
     // Validate data
     // const validation = {
