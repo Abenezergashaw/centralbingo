@@ -1300,7 +1300,9 @@ router.post("/profile", async (req, res) => {
 
 router.post("/referrals", async (req, res) => {
   try {
-    const { id, name } = req.body;
+    const { id } = req.body;
+
+    console.log("Referrals request for id:", id);
 
     if (!id) {
       return res.status(400).json({ error: "id is required" });
