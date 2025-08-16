@@ -215,7 +215,7 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
       "2519****6919"
     );
 
-    // console.log(receiptData);
+    console.log(receiptData);
 
     if (!receiptData.valid) {
       return res.status(400).json({
