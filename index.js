@@ -762,7 +762,7 @@ function timer(value) {
 // Generate numbers to draw
 function generate_numbers(g, c) {
   if (games[g].npc) {
-    const card = cards[c - 1];
+    const card = cards[1 - 1];
     return riggedShuffleFlexible(card);
   }
 
