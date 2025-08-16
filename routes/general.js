@@ -1283,6 +1283,7 @@ router.post("/profile", async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
+      name: name,
     });
   } catch (error) {
     console.error("Error updating profile:", error);
