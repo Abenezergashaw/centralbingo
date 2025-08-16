@@ -224,7 +224,9 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
       });
     }
 
-    const requestedAmount = parseInt(receiptData.receiptResponse.settledAmount);
+    const requestedAmount = parseInt(
+      receiptData.receiptResponse.data.settledAmount
+    );
 
     console.log("amount ", requestedAmount, receiptData.receiptResponse);
 
