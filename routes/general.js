@@ -185,6 +185,8 @@ router.post("/create_deposit_transaction", async (req, res) => {
 router.post("/auto_create_deposit_transaction", async (req, res) => {
   const { txn_id, phone, amount, method, type, status } = req.body;
 
+  console.log("Auto:", phone);
+
   if (!txn_id || !phone || !amount || !method || !type || !status) {
     return res
       .status(400)
