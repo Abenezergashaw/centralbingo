@@ -1388,39 +1388,46 @@ async function validateTelebrirReceipt(
     );
 
     // console.log(response.data);
+    if (response.data.success) {
+      const receiptResponse = response.data;
 
-    const receiptResponse = response.data;
+      const receiptData = {
+        receiverName: receiptResponse.data.creditedPartyName,
+        receiverPhone: receiptResponse.data.creditedPartyAccountNo,
+        senderPhone: receiptResponse.data.payerTelebirrNo,
+      };
 
-    const receiptData = {
-      receiverName: receiptResponse.data.creditedPartyName,
-      receiverPhone: receiptResponse.data.creditedPartyAccountNo,
-      senderPhone: receiptResponse.data.payerTelebirrNo,
-    };
+      // console.log("Recept data: ", receiptData);
 
-    // console.log("Recept data: ", receiptData);
+      // Validate data
+      const validation = {
+        receiverNameMatch: receiptData.receiverName === receiverName,
+        receiverPhoneMatch: receiptData.receiverPhone.endsWith(
+          receiverPhone.slice(-4)
+        ),
+        senderPhoneMatch: receiptData.senderPhone.endsWith(
+          senderPhone.slice(-4)
+        ),
+        allMatch: function () {
+          return (
+            this.receiverNameMatch &&
+            this.receiverPhoneMatch &&
+            this.senderPhoneMatch
+          );
+        },
+      };
 
-    // Validate data
-    const validation = {
-      receiverNameMatch: receiptData.receiverName === receiverName,
-      receiverPhoneMatch: receiptData.receiverPhone.endsWith(
-        receiverPhone.slice(-4)
-      ),
-      senderPhoneMatch: receiptData.senderPhone.endsWith(senderPhone.slice(-4)),
-      allMatch: function () {
-        return (
-          this.receiverNameMatch &&
-          this.receiverPhoneMatch &&
-          this.senderPhoneMatch
-        );
-      },
-    };
-
-    return {
-      valid: validation.allMatch(),
-      validationDetails: validation,
-      receiptData: receiptData,
-      receiptResponse: receiptResponse,
-    };
+      return {
+        valid: validation.allMatch(),
+        validationDetails: validation,
+        receiptData: receiptData,
+        receiptResponse: receiptResponse,
+      };
+    } else {
+      return {
+        valid: false,
+      };
+    }
   } catch (error) {
     console.error("Error validating receipt:", error);
     throw error;
