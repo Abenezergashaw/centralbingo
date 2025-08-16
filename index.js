@@ -626,11 +626,11 @@ function timer(value) {
         games[value].npc_variation_history = variationHistory;
 
         games[value].npc_initialized = true;
-        console.log(
-          `[NPC] Count: ${games[value].npc_count} (Variation: ${
-            variation > 0 ? "+" : ""
-          }${variation})`
-        );
+        // console.log(
+        //   `[NPC] Count: ${games[value].npc_count} (Variation: ${
+        //     variation > 0 ? "+" : ""
+        //   }${variation})`
+        // );
       }
 
       // Get or create NPC player
@@ -692,20 +692,20 @@ function timer(value) {
             } else {
               npcPlayer.cartela_number.push(...newNumbers);
             }
-            console.log(npcPlayer.cartela_number[0]);
-            console.log(
-              `[NPC] Added ${newNumbers.length} numbers: ${newNumbers.join(
-                ", "
-              )} ` +
-                `(Total: ${npcPlayer.cartela_number.length}/${games[value].npc_count})`
-            );
+            // console.log(npcPlayer.cartela_number[0]);
+            // console.log(
+            //   `[NPC] Added ${newNumbers.length} numbers: ${newNumbers.join(
+            //     ", "
+            //   )} ` +
+            //     `(Total: ${npcPlayer.cartela_number.length}/${games[value].npc_count})`
+            // );
 
             // Update tracking
             games[value].npc_last_add_time = count;
             if (npcPlayer.cartela_number.length >= games[value].npc_count) {
-              console.log(
-                `[NPC] Cartela completed with ${games[value].npc_count} numbers`
-              );
+              // console.log(
+              //   `[NPC] Cartela completed with ${games[value].npc_count} numbers`
+              // );
             }
           }
         }
@@ -715,17 +715,17 @@ function timer(value) {
     // Game start logic
     if (count < 2) {
       const active_players = games[value].players.filter((p) => p.is_active);
-      if (value === 10) console.log("Active players:", active_players.length);
+      // if (value === 10) console.log("Active players:", active_players.length);
       const hasNPC = active_players.some((p) => p.user_id === "npc");
       if (hasNPC || active_players.length > 1) {
         const hasRealPlayers = active_players.some((p) => p.user_id !== "npc");
-        console.log("Real Players: ", hasRealPlayers);
+        // console.log("Real Players: ", hasRealPlayers);
         if (hasRealPlayers) {
           games[value].consecutive_games = 0;
         } else {
           games[value].consecutive_games++;
         }
-        console.log(games[value].consecutive_games);
+        // console.log(games[value].consecutive_games);
         deduct_from_players_when_game_start(active_players, value);
         create_game(value);
         games[value].active = true;
@@ -1663,7 +1663,7 @@ async function npcWinCheckAlgorithm(g, n, d, c) {
   let u = "npc";
 
   if (games[g].npc_lines.length > 0) {
-    console.log("WON", games[g].npc_lines, n);
+    // console.log("WON", games[g].npc_lines, n);
 
     const now = Date.now();
     const time_passed = now - games[g].last_number_called_at;
@@ -1738,10 +1738,10 @@ async function npcWinCheckAlgorithm(g, n, d, c) {
         timer(g);
       }, 2000);
 
-      console.log("Npc Players: ", npcPlayers[0].cartela_number.length);
+      // console.log("Npc Players: ", npcPlayers[0].cartela_number.length);
     }, time_left - 250);
   } else {
-    console.log("Not won: ", games[g].npc_lines, n);
+    // console.log("Not won: ", games[g].npc_lines, n);
   }
 }
 
