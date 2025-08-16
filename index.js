@@ -216,14 +216,14 @@ let games = {
 };
 const userSockets = {};
 io.on("connection", (socket) => {
-  console.log("Client connected");
+  // console.log("Client connected");
 
   socket.emit("games", remove_interval_from_games());
 
   //Intialize username
   socket.on("set_username", (username) => {
     socket.username = username;
-    console.log("USername", username);
+    // console.log("USername", username);
   });
 
   //Refresh game list in home
@@ -233,7 +233,7 @@ io.on("connection", (socket) => {
 
   // Game rooms join
   socket.on("join_room", (room_id, username, g) => {
-    console.log("Joined", room_id, username, g);
+    // console.log("Joined", room_id, username, g);
 
     socket.room_id = room_id;
     socket.username = username;
@@ -246,7 +246,7 @@ io.on("connection", (socket) => {
     // console.log("Game ", g);
     if (g) {
       const index = games[g].players.findIndex((p) => p.user_id === username);
-      console.log("Found user: ", index);
+      // console.log("Found user: ", index);
       if (index !== -1) {
         socket.emit("cartela_number", JSON.stringify(games[g].players[index]));
       } else {
@@ -269,7 +269,7 @@ io.on("connection", (socket) => {
       return;
     }
 
-    console.log(":username:", u, n, g);
+    // console.log(":username:", u, n, g);
     try {
       const res = await axios.get(
         "http://localhost:5000/api/general/get_balance",
@@ -294,14 +294,14 @@ io.on("connection", (socket) => {
 
     // Remove user if selecting same single number again (legacy case)
 
-    console.log(
-      indexUser,
-      games[g]
+    // console.log(
+    //   indexUser,
+    //   games[g]
 
-      // Array.isArray(players[indexUser].cartela_number),
-      // players[indexUser].cartela_number.length === 1,
-      // players[indexUser].cartela_number[0] === n
-    );
+    //   // Array.isArray(players[indexUser].cartela_number),
+    //   // players[indexUser].cartela_number.length === 1,
+    //   // players[indexUser].cartela_number[0] === n
+    // );
 
     if (
       indexUser !== -1 &&
@@ -315,7 +315,7 @@ io.on("connection", (socket) => {
       //   `selected_card_respose_${g}`,
       //   JSON.stringify(cleanGame)
       // );
-      console.log("Game", g, games[g]);
+      // console.log("Game", g, games[g]);
       io.emit(`selected_card_respose_${g}`, JSON.stringify(cleanGame));
       return;
     }
@@ -355,7 +355,7 @@ io.on("connection", (socket) => {
           cartela.shift();
           cartela.push(n);
         }
-        console.log(players, "LL");
+        // console.log(players, "LL");
         players[indexUser].cartela_number = cartela;
       }
 
@@ -366,7 +366,7 @@ io.on("connection", (socket) => {
         cartela_number: [n],
         is_active: false,
       });
-      console.log(players);
+      // console.log(players);
     }
 
     const { interval, grace_timeout, ...cleanGame } = games[g];
@@ -379,7 +379,7 @@ io.on("connection", (socket) => {
 
   // returning from cartela to home
   socket.on("cartela_to_home", (u, g) => {
-    console.log("Received");
+    // console.log("Received");
     remove_user_from_players_list(g, u);
   });
 
@@ -390,7 +390,7 @@ io.on("connection", (socket) => {
     const index = players.findIndex((p) => p.user_id === u);
     if (index !== -1) {
       players[index].is_active = true;
-      console.log("success");
+      // console.log("success");
     }
   });
 
@@ -399,7 +399,7 @@ io.on("connection", (socket) => {
       games[g].players = games[g].players.filter((p) => p.user_id !== u);
       const { interval, grace_timeout, ...cleanGame } = games[g];
       io.to(`game_${g}`).emit(`go_back_${g}`, JSON.stringify(cleanGame));
-      console.log("Game", g, games[g]);
+      // console.log("Game", g, games[g]);
       // io.emit(`selected_card_respose_${g}`, JSON.stringify(cleanGame));
       return;
     }
@@ -489,7 +489,7 @@ io.on("connection", (socket) => {
         timer(g);
       }, 2000);
 
-      console.log(winner_data);
+      // console.log(winner_data);
     }, time_left - 250);
   });
 
@@ -505,7 +505,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", (reason) => {
     const room = socket.room_id;
     const u = socket.username;
-    console.log("removed", "room", room, u, reason);
+    // console.log("removed", "room", room, u, reason);/
     if (room) {
       const g = room.split("_")[1];
       remove_user_from_players_list(g, u);
@@ -517,7 +517,7 @@ io.on("connection", (socket) => {
 function emptyRoom(roomName) {
   const room = io.sockets.adapter.rooms.get(roomName);
 
-  console.log("ROom exists");
+  // console.log("ROom exists");
 
   if (!room) return; // Room doesn't exist
 
@@ -533,16 +533,16 @@ function emptyRoom(roomName) {
 function removeUserFromRoom(roomName, username) {
   const socketId = userSockets[username];
   if (!socketId) {
-    console.log(`No socket found for username: ${username}`);
+    // console.log(`No socket found for username: ${username}`);
     return;
   }
 
   const socketToRemove = io.sockets.sockets.get(socketId);
   if (socketToRemove) {
     socketToRemove.leave(roomName);
-    console.log(`Removed ${username} from room ${roomName}`);
+    // console.log(`Removed ${username} from room ${roomName}`);
   } else {
-    console.log(`Socket for ${username} not connected`);
+    // console.log(`Socket for ${username} not connected`);
   }
 }
 
@@ -559,13 +559,13 @@ function remove_interval_from_games() {
 // Remove player from list if they selected cartela
 function remove_user_from_players_list(g, u) {
   const index = games[g].players.findIndex((p) => p.user_id === u);
-  console.log(index, "indexxx");
+  // console.log(index, "indexxx");
   if (index !== -1) {
     if (0 == 0) {
       // if (!games[g].players[index].is_active) {
-      console.log("Leaving Player", games[g].players[index]);
+      // console.log("Leaving Player", games[g].players[index]);
       games[g].players = games[g].players.filter((p) => p.user_id !== u);
-      console.log("After Leaving Player", games[g].players);
+      // console.log("After Leaving Player", games[g].players);
     }
   }
 }
@@ -958,7 +958,7 @@ async function create_game(g) {
       "INSERT INTO games (game, players, no_players, winner, cartela_number,npc_win) VALUES (?, ?, ?, ?, ?,?)",
       [g, sanitizedForDb, totalCartelaCount, "", 0, 0]
     );
-    console.log("✅ Game inserted successfully");
+    // console.log("✅ Game inserted successfully");
   } catch (err) {
     console.error("❌ Error inserting game:", err.message);
   }
@@ -973,7 +973,7 @@ async function update_winner_on_games(id, w, n, npc) {
     );
 
     if (result.affectedRows > 0) {
-      console.log(`✅ Game ${id} updated successfully.`);
+      // console.log(`✅ Game ${id} updated successfully.`);
     } else {
       console.warn(`⚠️ Game ${id} not found.`);
     }
@@ -1033,9 +1033,9 @@ async function deduct_from_players_when_game_start(players, value) {
       [bonus, balance, userId]
     );
 
-    console.log(
-      `✅ Deducted ${totalCost} from user ${userId} (${cartelas} cartelas) | Bonus: ${bonus}, Balance: ${balance}`
-    );
+    // console.log(
+    //   `✅ Deducted ${totalCost} from user ${userId} (${cartelas} cartelas) | Bonus: ${bonus}, Balance: ${balance}`
+    // );
   }
 }
 
@@ -1048,11 +1048,11 @@ async function add_win_amount_to_winner(phone, amount) {
     );
 
     if (result.affectedRows === 0) {
-      console.log(`No user found with phone: ${phone}`);
+      // console.log(`No user found with phone: ${phone}`);
       return false;
     }
 
-    console.log(`Added ${amount} to ${phone}'s balance`);
+    // console.log(`Added ${amount} to ${phone}'s balance`);/
     return true;
   } catch (error) {
     console.error("Error updating balance:", error.message);
@@ -1069,7 +1069,7 @@ async function get_winner_name(phone) {
     );
 
     if (rows.length === 0) {
-      console.log(`No user found with phone: ${phone}`);
+      // console.log(`No user found with phone: ${phone}`);
       return null;
     }
 
@@ -1490,7 +1490,7 @@ bot.on("callback_query", async (query) => {
       // Axios puts backend error messages in err.response.data
       const message =
         err.response?.data?.error || err.message || "Unexpected error";
-      console.log(err.response?.data);
+      // console.log(err.response?.data);
       bot.sendMessage("298268884", message);
 
       return { message };
@@ -1545,7 +1545,7 @@ async function create_referral_data(new_telegram_id, referrer_telegram_id) {
       referrer_telegram_id,
     ]);
   } catch (err) {
-    console.log("Referral failed.", err);
+    // console.log("Referral failed.", err);
   }
 }
 
@@ -1564,7 +1564,7 @@ async function reward_the_referrer(u_id) {
       );
 
       if (rows2.length === 0) {
-        console.log("User not found");
+        // console.log("User not found");
         return;
       }
 
