@@ -1316,8 +1316,12 @@ router.post("/referrals", async (req, res) => {
        ORDER BY created_at DESC`,
       [id]
     );
+    const modifiedRows = rows.map((r) => ({
+      ...r,
+      new_telegram_id: get_phone_from_telegram_id(r.new_telegram_id),
+    }));
 
-    res.json({ success: true, data: rows });
+    res.json({ success: true, data: modifiedRows });
   } catch (err) {
     console.error("❌ Error querying profile:", err);
     res.status(500).json({ error: "Server error" });
@@ -1333,6 +1337,21 @@ async function get_telegram_id_from_phone(phone) {
       [phone]
     );
     return rows[0].telegram_id;
+  } catch (err) {
+    console.error("Error checking user existence:", err);
+    return false;
+  }
+}
+
+async function get_phone_from_telegram_id(u_id) {
+  if (!u_id) return false;
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT phone FROM users WHERE telegram_id = ? LIMIT 1",
+      [u_id]
+    );
+    return rows[0].phone;
   } catch (err) {
     console.error("Error checking user existence:", err);
     return false;
