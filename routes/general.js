@@ -1377,14 +1377,14 @@ async function validateTelebrirReceipt(
     // Scrape data
     // const receiptData = await scrapeTelebrirReceipt(receiptUrl);
 
-    const res = await axios.post(
-      "https.//verifyapi.leulzenebe.pro/verify-telebirr",
+    const response = await axios.post(
+      "https://verifyapi.leulzenebe.pro/verify-telebirr",
       {
-        reference,
+        reference: "CHG28R5KNY",
       },
       {
         headers: {
-          "Content-Type": "appplication/json",
+          "Content-Type": "application/json",
           "x-api-key":
             "Y21lZW04czcyMDAxZ25xMGtnZTI3eGxlei0xNzU1MzcwNjYyODIwLTB0NTNtMHduYzY4ZA",
         },
