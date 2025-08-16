@@ -1384,6 +1384,9 @@ async function validateTelebrirReceipt(
           "x-api-key":
             "Y21lZW04czcyMDAxZ25xMGtnZTI3eGxlei0xNzU1MzcwNjYyODIwLTB0NTNtMHduYzY4ZA",
         },
+      },
+      {
+        validateStatus: (status) => status >= 200 && status < 500, // Don't throw for 4xx errors
       }
     );
 
