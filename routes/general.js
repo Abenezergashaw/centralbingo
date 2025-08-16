@@ -1375,7 +1375,7 @@ async function validateTelebrirReceipt(
     const response = await axios.post(
       "https://verifyapi.leulzenebe.pro/verify-telebirr",
       {
-        reference: "CHG28R5KNY",
+        reference,
       },
       {
         headers: {
