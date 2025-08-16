@@ -1316,10 +1316,14 @@ router.post("/referrals", async (req, res) => {
        ORDER BY created_at DESC`,
       [id]
     );
-    const modifiedRows = rows.map(async (r) => ({
-      ...r,
-      new_telegram_id: await get_phone_from_telegram_id(r.new_telegram_id),
-    }));
+    const modifiedRows = await Promise.all(
+      rows.map(async (r) => ({
+        ...r,
+        new_telegram_id: await get_phone_from_telegram_id(r.new_telegram_id),
+      }))
+    );
+
+    res.json({ success: true, data: modifiedRows });
 
     res.json({ success: true, data: modifiedRows });
   } catch (err) {
