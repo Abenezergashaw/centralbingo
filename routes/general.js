@@ -215,60 +215,60 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
       "2519****6919"
     );
 
-    // console.log(
-    //   receiptData.valid,
-    //   receiptData.receiptData.amount -
-    //     receiptData.receiptData.serviceFee -
-    //     receiptData.receiptData.serviceFeeVAT
-    // );
+    console.log(
+      receiptData.valid,
+      receiptData.receiptData.amount -
+        receiptData.receiptData.serviceFee -
+        receiptData.receiptData.serviceFeeVAT
+    );
 
-    // if (!receiptData.valid) {
-    //   return res.status(400).json({
-    //     status: false,
-    //     message: "Invalid transaction number",
-    //   });
-    // }
+    if (!receiptData.valid) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid transaction number",
+      });
+    }
 
-    // const requestedAmount =
-    //   receiptData.receiptData.amount -
-    //   receiptData.receiptData.serviceFee -
-    //   receiptData.receiptData.serviceFeeVAT;
+    const requestedAmount =
+      receiptData.receiptData.amount -
+      receiptData.receiptData.serviceFee -
+      receiptData.receiptData.serviceFeeVAT;
 
-    // // ✅ Insert new transaction
-    // await pool.query(
-    //   `INSERT INTO transaction (txn_id, phone, amount, method, type, name, account, status)
-    //        VALUES (?, ?, ?, ?, ?, ?,? ,?)`,
-    //   [txn_id, phone, requestedAmount, method, type, "NA", "NA", "active"]
-    // );
+    // ✅ Insert new transaction
+    await pool.query(
+      `INSERT INTO transaction (txn_id, phone, amount, method, type, name, account, status)
+           VALUES (?, ?, ?, ?, ?, ?,? ,?)`,
+      [txn_id, phone, requestedAmount, method, type, "NA", "NA", "active"]
+    );
 
-    // const summary = `Money has been deposited. Details:
-    // 🏦 Bank: ${method}
-    // 👤 Phone Number: ${phone}
-    // 💵 Amount: ETB ${requestedAmount}
-    // 📄 Ref: ${txn_id}`;
+    const summary = `Money has been deposited. Details:
+    🏦 Bank: ${method}
+    👤 Phone Number: ${phone}
+    💵 Amount: ETB ${requestedAmount}
+    📄 Ref: ${txn_id}`;
 
-    // bot.sendMessage("353008986", summary, {
-    //   // reply_markup: {
-    //   //   inline_keyboard: [
-    //   //     [
-    //   //       {
-    //   //         text: "Confirm",
-    //   //         callback_data: `confirm_d_${phone}_${amount}_${txn_id}`,
-    //   //       },
-    //   //     ],
-    //   //   ],
-    //   // },
-    // });
-    // await pool.query("UPDATE users SET bonus = bonus + ? WHERE phone = ?", [
-    //   requestedAmount,
-    //   phone,
-    // ]);
+    bot.sendMessage("353008986", summary, {
+      // reply_markup: {
+      //   inline_keyboard: [
+      //     [
+      //       {
+      //         text: "Confirm",
+      //         callback_data: `confirm_d_${phone}_${amount}_${txn_id}`,
+      //       },
+      //     ],
+      //   ],
+      // },
+    });
+    await pool.query("UPDATE users SET bonus = bonus + ? WHERE phone = ?", [
+      requestedAmount,
+      phone,
+    ]);
 
-    // res.json({
-    //   status: true,
-    //   message: "Transaction saved",
-    //   amount: requestedAmount,
-    // });
+    res.json({
+      status: true,
+      message: "Transaction saved",
+      amount: requestedAmount,
+    });
   } catch (err) {
     console.error("DB error:", err);
     res.status(500).json({ status: false, message: "Server error" });
@@ -1391,29 +1391,37 @@ async function validateTelebrirReceipt(
       }
     );
 
-    console.log(response.data);
+    // console.log(response.data);
+
+    const receiptResponse = response.data;
+
+    const receiptData = {
+      receiverName: receiptResponse.data.creditedPartyName,
+      receiverPhone: receiptResponse.data.creditedPartyAccountNo,
+      senderPhone: receiptResponse.data.payerTelebirrNo,
+    };
 
     // Validate data
-    // const validation = {
-    //   receiverNameMatch: receiptData.receiverName === receiverName,
-    //   receiverPhoneMatch: receiptData.receiverPhone.endsWith(
-    //     receiverPhone.slice(-4)
-    //   ),
-    //   senderPhoneMatch: receiptData.senderPhone.endsWith(senderPhone.slice(-4)),
-    //   allMatch: function () {
-    //     return (
-    //       this.receiverNameMatch &&
-    //       this.receiverPhoneMatch &&
-    //       this.senderPhoneMatch
-    //     );
-    //   },
-    // };
+    const validation = {
+      receiverNameMatch: receiptData.receiverName === receiverName,
+      receiverPhoneMatch: receiptData.receiverPhone.endsWith(
+        receiverPhone.slice(-4)
+      ),
+      senderPhoneMatch: receiptData.senderPhone.endsWith(senderPhone.slice(-4)),
+      allMatch: function () {
+        return (
+          this.receiverNameMatch &&
+          this.receiverPhoneMatch &&
+          this.senderPhoneMatch
+        );
+      },
+    };
 
-    // return {
-    //   valid: validation.allMatch(),
-    //   validationDetails: validation,
-    //   receiptData: receiptData,
-    // };
+    return {
+      valid: validation.allMatch(),
+      validationDetails: validation,
+      receiptData: receiptData,
+    };
   } catch (error) {
     console.error("Error validating receipt:", error);
     throw error;
