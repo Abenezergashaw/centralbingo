@@ -1251,7 +1251,7 @@ bot.on("message", async (msg) => {
 🚀 Get Br. 3 for every friend who joins using your link!
 
 🔗 Your Invite Link:
-https://t.me/abogidabingobot?start=${chatId}
+https://t.me/central_bingo_bot?start=${chatId}
 
 👫 The more friends you bring, the more you earn!
 💸 They play, you get paid — simple as that.
