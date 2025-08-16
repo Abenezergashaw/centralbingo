@@ -1396,6 +1396,8 @@ async function validateTelebrirReceipt(
       senderPhone: receiptResponse.data.payerTelebirrNo,
     };
 
+    // console.log("Recept data: ", receiptData);
+
     // Validate data
     const validation = {
       receiverNameMatch: receiptData.receiverName === receiverName,
@@ -1416,6 +1418,7 @@ async function validateTelebrirReceipt(
       valid: validation.allMatch(),
       validationDetails: validation,
       receiptData: receiptData,
+      receiptResponse: receiptResponse,
     };
   } catch (error) {
     console.error("Error validating receipt:", error);
