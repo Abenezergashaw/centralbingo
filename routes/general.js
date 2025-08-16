@@ -266,7 +266,7 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
     //   amount: requestedAmount,
     // });
   } catch (err) {
-    console.error("DB error:", err);
+    console.error("DB error:");
     res.status(500).json({ status: false, message: "Server error" });
   }
 });
@@ -1434,8 +1434,19 @@ async function validateTelebrirReceipt(
       };
     }
   } catch (error) {
-    console.error("Error validating receipt:", error);
-    throw error;
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      console.log("Status code:", error.response.status);
+      if (error.response.status === 404) {
+        console.log("Resource not found!");
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.log("No response received:", error.request);
+    } else {
+      // Something happened setting up the request
+      console.log("Error", error.message);
+    }
   }
 }
 
