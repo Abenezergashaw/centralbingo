@@ -1009,7 +1009,7 @@ async function deduct_from_players_when_game_start(players, value) {
     );
 
     if (rows.length === 0) {
-      console.warn(`User not found: ${userId}`);
+      // console.warn(`User not found: ${userId}`);
       continue;
     }
 
@@ -1219,7 +1219,7 @@ bot.on("message", async (msg) => {
       }
     } catch (err) {
       if (err.response && err.response.status === 404) {
-        console.warn("User not found");
+        // console.warn("User not found");
         return 0;
       } else {
         console.error("Request failed:", err.message);

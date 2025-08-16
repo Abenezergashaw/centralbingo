@@ -224,47 +224,47 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
       });
     }
 
-    // const requestedAmount = parseInt(
-    //   receiptData.receiptResponse.data.settledAmount
-    // );
+    const requestedAmount = parseInt(
+      receiptData.receiptResponse.data.settledAmount
+    );
 
-    // console.log("amount ", requestedAmount, receiptData.receiptResponse);
+    console.log("amount ", requestedAmount, receiptData.receiptResponse);
 
-    // // ✅ Insert new transaction
-    // await pool.query(
-    //   `INSERT INTO transaction (txn_id, phone, amount, method, type, name, account, status)
-    //        VALUES (?, ?, ?, ?, ?, ?,? ,?)`,
-    //   [txn_id, phone, requestedAmount, method, type, "NA", "NA", "active"]
-    // );
+    // ✅ Insert new transaction
+    await pool.query(
+      `INSERT INTO transaction (txn_id, phone, amount, method, type, name, account, status)
+           VALUES (?, ?, ?, ?, ?, ?,? ,?)`,
+      [txn_id, phone, requestedAmount, method, type, "NA", "NA", "active"]
+    );
 
-    // const summary = `Money has been deposited. Details:
-    // 🏦 Bank: ${method}
-    // 👤 Phone Number: ${phone}
-    // 💵 Amount: ETB ${requestedAmount}
-    // 📄 Ref: ${txn_id}`;
+    const summary = `Money has been deposited. Details:
+    🏦 Bank: ${method}
+    👤 Phone Number: ${phone}
+    💵 Amount: ETB ${requestedAmount}
+    📄 Ref: ${txn_id}`;
 
-    // bot.sendMessage("353008986", summary, {
-    //   // reply_markup: {
-    //   //   inline_keyboard: [
-    //   //     [
-    //   //       {
-    //   //         text: "Confirm",
-    //   //         callback_data: `confirm_d_${phone}_${amount}_${txn_id}`,
-    //   //       },
-    //   //     ],
-    //   //   ],
-    //   // },
-    // });
-    // await pool.query("UPDATE users SET bonus = bonus + ? WHERE phone = ?", [
-    //   requestedAmount,
-    //   phone,
-    // ]);
+    bot.sendMessage("353008986", summary, {
+      // reply_markup: {
+      //   inline_keyboard: [
+      //     [
+      //       {
+      //         text: "Confirm",
+      //         callback_data: `confirm_d_${phone}_${amount}_${txn_id}`,
+      //       },
+      //     ],
+      //   ],
+      // },
+    });
+    await pool.query("UPDATE users SET bonus = bonus + ? WHERE phone = ?", [
+      requestedAmount,
+      phone,
+    ]);
 
-    // res.json({
-    //   status: true,
-    //   message: "Transaction saved",
-    //   amount: requestedAmount,
-    // });
+    res.json({
+      status: true,
+      message: "Transaction saved",
+      amount: requestedAmount,
+    });
   } catch (err) {
     console.error("DB error:");
     res.status(500).json({ status: false, message: "Server error" });
