@@ -217,12 +217,12 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
 
     // console.log(receiptData);
 
-    // if (!receiptData.valid) {
-    //   return res.status(400).json({
-    //     status: false,
-    //     message: "Invalid transaction number",
-    //   });
-    // }
+    if (!receiptData.valid) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid transaction number",
+      });
+    }
 
     // const requestedAmount = parseInt(
     //   receiptData.receiptResponse.data.settledAmount
@@ -1393,46 +1393,46 @@ async function validateTelebrirReceipt(
     console.log(res.data);
 
     // console.log(response.data);
-    // if (response.data.success) {
-    //   const receiptResponse = response.data;
+    if (response.data.success) {
+      const receiptResponse = response.data;
 
-    //   const receiptData = {
-    //     receiverName: receiptResponse.data.creditedPartyName,
-    //     receiverPhone: receiptResponse.data.creditedPartyAccountNo,
-    //     senderPhone: receiptResponse.data.payerTelebirrNo,
-    //   };
+      const receiptData = {
+        receiverName: receiptResponse.data.creditedPartyName,
+        receiverPhone: receiptResponse.data.creditedPartyAccountNo,
+        senderPhone: receiptResponse.data.payerTelebirrNo,
+      };
 
-    //   // console.log("Recept data: ", receiptData);
+      // console.log("Recept data: ", receiptData);
 
-    //   // Validate data
-    //   const validation = {
-    //     receiverNameMatch: receiptData.receiverName === receiverName,
-    //     receiverPhoneMatch: receiptData.receiverPhone.endsWith(
-    //       receiverPhone.slice(-4)
-    //     ),
-    //     senderPhoneMatch: receiptData.senderPhone.endsWith(
-    //       senderPhone.slice(-4)
-    //     ),
-    //     allMatch: function () {
-    //       return (
-    //         this.receiverNameMatch &&
-    //         this.receiverPhoneMatch &&
-    //         this.senderPhoneMatch
-    //       );
-    //     },
-    //   };
+      // Validate data
+      const validation = {
+        receiverNameMatch: receiptData.receiverName === receiverName,
+        receiverPhoneMatch: receiptData.receiverPhone.endsWith(
+          receiverPhone.slice(-4)
+        ),
+        senderPhoneMatch: receiptData.senderPhone.endsWith(
+          senderPhone.slice(-4)
+        ),
+        allMatch: function () {
+          return (
+            this.receiverNameMatch &&
+            this.receiverPhoneMatch &&
+            this.senderPhoneMatch
+          );
+        },
+      };
 
-    //   return {
-    //     valid: validation.allMatch(),
-    //     validationDetails: validation,
-    //     receiptData: receiptData,
-    //     receiptResponse: receiptResponse,
-    //   };
-    // } else {
-    //   return {
-    //     valid: false,
-    //   };
-    // }
+      return {
+        valid: validation.allMatch(),
+        validationDetails: validation,
+        receiptData: receiptData,
+        receiptResponse: receiptResponse,
+      };
+    } else {
+      return {
+        valid: false,
+      };
+    }
   } catch (error) {
     console.error("Error validating receipt:", error);
     throw error;
