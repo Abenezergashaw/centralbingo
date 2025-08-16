@@ -212,7 +212,7 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
       txn_id,
       admin_name,
       admin_telebirr_phone,
-      "2519****6919"
+      phone
     );
 
     console.log(receiptData);
