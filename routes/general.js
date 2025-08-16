@@ -8,8 +8,8 @@ const { signES256 } = require("../utils/cryptography");
 const admin_phone = ["934596919", "938880223"];
 const cheerio = require("cheerio");
 
-const admin_name = "KALEAB FIKRU MEKONEN";
-const admin_telebirr_phone = "2519****2626";
+const admin_name = "SOLOMON TADELO MANZENGIA";
+const admin_telebirr_phone = "2519****9201";
 
 const PRIVATE_KEY = `
 -----BEGIN EC PRIVATE KEY-----
