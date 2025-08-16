@@ -224,10 +224,7 @@ router.post("/auto_create_deposit_transaction", async (req, res) => {
       });
     }
 
-    const requestedAmount =
-      receiptData.receiptData.amount -
-      receiptData.receiptData.serviceFee -
-      receiptData.receiptData.serviceFeeVAT;
+    const requestedAmount = parseInt(receiptData.receiptResponse.settledAmount);
 
     // ✅ Insert new transaction
     await pool.query(
