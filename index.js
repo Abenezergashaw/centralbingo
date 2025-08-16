@@ -762,7 +762,7 @@ function timer(value) {
 // Generate numbers to draw
 function generate_numbers(g, c) {
   if (games[g].npc) {
-    const card = cards[1 - 1];
+    const card = cards[c - 1];
     return riggedShuffleFlexible(card);
   }
 
@@ -890,12 +890,12 @@ function broadcast_numbers(g, numbers) {
         is_active: true,
       };
 
-      // npcWinCheckAlgorithm(
-      //   g,
-      //   npcPlayer.cartela_number[0],
-      //   games[g].drawn_numbers,
-      //   numbers[games[g].counter]
-      // );
+      npcWinCheckAlgorithm(
+        g,
+        npcPlayer.cartela_number[0],
+        games[g].drawn_numbers,
+        numbers[games[g].counter]
+      );
     }
   } else {
     games[g].counter = 0;
