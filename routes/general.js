@@ -1298,6 +1298,30 @@ router.post("/profile", async (req, res) => {
   }
 });
 
+router.post("/referrals", async (req, res) => {
+  try {
+    const { id, name } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "id is required" });
+    }
+
+    // Query referrals by referrer_telegram_id
+    const [rows] = await pool.query(
+      `SELECT *
+       FROM referrals 
+       WHERE referrer_telegram_id = ? 
+       ORDER BY created_at DESC`,
+      [id]
+    );
+
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("❌ Error querying profile:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 async function get_telegram_id_from_phone(phone) {
   if (!phone) return false;
 
