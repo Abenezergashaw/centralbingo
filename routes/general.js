@@ -1390,7 +1390,7 @@ async function validateTelebrirReceipt(
       }
     );
 
-    // console.log(res.data);
+    console.log("sender phone", senderPhone);
 
     // console.log(response.data);
     if (response.data.success) {
