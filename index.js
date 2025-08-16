@@ -44,7 +44,7 @@ let games = {
     winners: [],
     last_number_called_at: Date.now(),
     grace_timeout: null,
-    npc: true,
+    npc: false,
     npc_count: 2,
     npc_added: 0,
     npc_lines: [],
@@ -65,7 +65,7 @@ let games = {
     winners: [],
     last_number_called_at: Date.now(),
     grace_timeout: null,
-    npc: true,
+    npc: false,
     npc_count: 5,
     npc_added: 0,
     npc_lines: [],
@@ -86,7 +86,7 @@ let games = {
     winners: [],
     last_number_called_at: Date.now(),
     grace_timeout: null,
-    npc: true,
+    npc: false,
     npc_count: 5,
     npc_added: 0,
     npc_lines: [],
@@ -127,7 +127,7 @@ let games = {
     winners: [],
     last_number_called_at: Date.now(),
     grace_timeout: null,
-    npc: true,
+    npc: false,
     npc_count: 5,
     npc_added: 0,
     npc_lines: [],
@@ -389,7 +389,7 @@ io.on("connection", (socket) => {
 
     const index = players.findIndex((p) => p.user_id === u);
     if (index !== -1) {
-      players[index].is_active = true;
+      players[index].is_active = false;
       // console.log("success");
     }
   });
