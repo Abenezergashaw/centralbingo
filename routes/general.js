@@ -1185,6 +1185,7 @@ router.get("/get_name", async (req, res) => {
 
 router.post("/transfer", async (req, res) => {
   const { phone1, phone2, amount } = req.body;
+  const txn_id = uuidv4();
 
   try {
     const [reciever] = await pool.query(
@@ -1232,6 +1233,12 @@ router.post("/transfer", async (req, res) => {
       amount,
       phone2,
     ]);
+
+    await pool.query(
+      `INSERT INTO transaction (txn_id, phone, amount, method, type, name, account, status)
+           VALUES (?, ?, ?, ?, ?, ?,? ,?)`,
+      [txn_id, phone1, amount, "", "transfer", "NA", "NA", "active"]
+    );
 
     const telegram_id_2 = await get_telegram_id_from_phone(phone2);
     const telegram_id_1 = await get_telegram_id_from_phone(phone1);
