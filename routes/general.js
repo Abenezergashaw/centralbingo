@@ -1439,6 +1439,9 @@ async function validateTelebrirReceipt(
       console.log("Status code:", error.response.status);
       if (error.response.status === 404) {
         console.log("Resource not found!");
+        return {
+          valid: false,
+        };
       }
     } else if (error.request) {
       // The request was made but no response was received
