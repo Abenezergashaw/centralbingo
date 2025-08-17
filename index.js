@@ -441,6 +441,8 @@ io.on("connection", (socket) => {
           p.is_active && Array.isArray(p.cartela_number) && p.user_id === "npc"
       );
 
+      const npcCartelaLength = npcPlayers[0]?.cartela_number?.length ?? 0;
+
       const totalCartelaCount = active_players.reduce(
         (sum, p) => sum + p.cartela_number.length,
         0
@@ -459,7 +461,7 @@ io.on("connection", (socket) => {
         last_game_id,
         uu.join(","),
         cc.join(","),
-        npcPlayers[0].cartela_number.length
+        npcCartelaLength
       );
 
       const total_winners = games[g].winners.length;
