@@ -364,7 +364,7 @@ io.on("connection", (socket) => {
       players.push({
         user_id: u,
         cartela_number: [n],
-        is_active: false,
+        is_active: true,
       });
       // console.log(players);
     }
