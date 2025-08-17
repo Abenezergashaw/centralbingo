@@ -366,7 +366,7 @@ io.on("connection", (socket) => {
         cartela_number: [n],
         is_active: true,
       });
-      // console.log(players);
+      console.log(players);
     }
 
     const { interval, grace_timeout, ...cleanGame } = games[g];
@@ -713,9 +713,9 @@ function timer(value) {
     }
 
     // Game start logic
-    if (count < 2) {
+    if (count < 1) {
       const active_players = games[value].players.filter((p) => p.is_active);
-      // if (value === 10) console.log("Active players:", active_players.length);
+      if (value === 10) console.log("Active players:", active_players.length);
       const hasNPC = active_players.some((p) => p.user_id === "npc");
       if (hasNPC || active_players.length > 1) {
         const hasRealPlayers = active_players.some((p) => p.user_id !== "npc");
