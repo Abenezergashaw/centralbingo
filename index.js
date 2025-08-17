@@ -223,7 +223,7 @@ io.on("connection", (socket) => {
   //Intialize username
   socket.on("set_username", (username) => {
     socket.username = username;
-    // console.log("USername", username);
+    console.log("USername", username);
   });
 
   //Refresh game list in home
