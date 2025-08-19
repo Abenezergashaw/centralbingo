@@ -333,6 +333,8 @@ io.on("connection", (socket) => {
       [u]
     );
 
+    console.log("uuu,", u);
+
     if (rows.length > 0) {
       const { balance, bonus } = rows[0];
       if (balance + bonus >= 2 * game_value) {
