@@ -860,11 +860,11 @@ timer(10);
 timer(20);
 timer(30);
 timer(50);
-timer(80);
+// timer(80);
 timer(100);
-timer(150);
+// timer(150);
 timer(200);
-timer(300);
+// timer(300);
 
 // Clear everything on bingo
 function clear_everything(g) {
